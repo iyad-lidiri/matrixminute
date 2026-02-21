@@ -1,3 +1,5 @@
+package com.matrixminute.entity;
+
 import jakarta.persistence.*;
 
 @Entity
