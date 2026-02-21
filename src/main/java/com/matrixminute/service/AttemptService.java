@@ -1,47 +1,55 @@
 package com.matrixminute.service;
 
+import com.matrixminute.entity.AttemptEntity;
+import com.matrixminute.repository.AttemptRepository;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class AttemptService {
 
-    private static final int MAX_ATTEMPTS = 6;
+    private final AttemptRepository repo;
+    private static final int MAX_ATTEMPTS = 5;
 
-    private final Map<String, Integer> attemptsMap = new HashMap<>();
-    private final Map<String, Boolean> solvedMap = new HashMap<>();
-    private final java.util.Set<String> solvedUsers = new java.util.HashSet<>();
-
-    public boolean isSolved(String userId) {
-        return solvedUsers.contains(userId);
+    public AttemptService(AttemptRepository repo) {
+        this.repo = repo;
     }
 
-    private String key(String userId) {
-        return userId + "_" + LocalDate.now();
+    private AttemptEntity getOrCreate(String userId, String date) {
+        return repo.findByUserIdAndDate(userId, date)
+                .orElseGet(() -> {
+                    AttemptEntity a = new AttemptEntity();
+                    a.userId = userId;
+                    a.date = date;
+                    a.attemptsUsed = 0;
+                    a.solved = false;
+                    return repo.save(a);
+                });
     }
 
-    public int getAttempts(String userId) {
-        return attemptsMap.getOrDefault(key(userId), 0);
+    public void incrementAttempts(String userId, String date) {
+        AttemptEntity a = getOrCreate(userId, date);
+        a.attemptsUsed++;
+        repo.save(a);
     }
 
-    public void incrementAttempts(String userId) {
-        String k = key(userId);
-        attemptsMap.put(k, getAttempts(userId) + 1);
+    public int attemptsLeft(String userId, String date) {
+        AttemptEntity a = getOrCreate(userId, date);
+        return MAX_ATTEMPTS - a.attemptsUsed;
     }
 
-    public int attemptsLeft(String userId) {
-        return MAX_ATTEMPTS - getAttempts(userId);
+    public boolean isLocked(String userId, String date) {
+        AttemptEntity a = getOrCreate(userId, date);
+        return a.attemptsUsed >= MAX_ATTEMPTS || a.solved;
     }
 
-    public boolean isLocked(String userId) {
-        return solvedMap.getOrDefault(key(userId), false)
-                || getAttempts(userId) >= MAX_ATTEMPTS;
+    public boolean isSolved(String userId, String date) {
+        AttemptEntity a = getOrCreate(userId, date);
+        return a.solved;
     }
 
-    public void markSolved(String userId) {
-        solvedUsers.add(userId);
+    public void markSolved(String userId, String date) {
+        AttemptEntity a = getOrCreate(userId, date);
+        a.solved = true;
+        repo.save(a);
     }
 }

@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<body>
+<h2>Matrix Minute API Test</h2>
+
+<button id="dailyBtn">GET /api/daily</button>
+<pre id="dailyOut"></pre>
+
+<input id="guess" type="number" placeholder="guess" />
+<button id="guessBtn">POST /api/guess</button>
+<pre id="guessOut"></pre>
+
+<script>
+    // simple user id for now (yaphet can copy this)
+    let userId = localStorage.getItem("mm_uid");
+    if (!userId) {
+      userId = crypto.randomUUID();
+      localStorage.setItem("mm_uid", userId);
+    }
+
+    const dailyOut = document.getElementById("dailyOut");
+    const guessOut = document.getElementById("guessOut");
+
+    document.getElementById("dailyBtn").onclick = async () => {
+      const r = await fetch("/api/daily");
+      dailyOut.textContent = JSON.stringify(await r.json(), null, 2);
+    };
+
+    document.getElementById("guessBtn").onclick = async () => {
+      const guess = Number(document.getElementById("guess").value);
+      const r = await fetch("/api/guess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, guess })
+      });
+      guessOut.textContent = JSON.stringify(await r.json(), null, 2);
+    };
+</script>
+</body>
+</html>

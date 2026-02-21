@@ -47,8 +47,12 @@ public class DailyController {
 
         GuessResponse response = new GuessResponse();
 
-        //  If locked → stop immediately
-        if (attemptService.isLocked(request.userId)) {
+        DailyProblem problem = dailyProblemService.getTodayProblem();
+        String today = problem.date;
+        int realAnswer = problem.answer;
+
+        // If locked
+        if (attemptService.isLocked(request.userId, today)) {
             response.locked = true;
             response.attemptsLeft = 0;
             response.correct = false;
@@ -56,25 +60,22 @@ public class DailyController {
             return response;
         }
 
-        //  If already solved → stop immediately
-        if (attemptService.isSolved(request.userId)) {
+        // If already solved
+        if (attemptService.isSolved(request.userId, today)) {
             response.locked = true;
             response.correct = true;
             response.feedback = "already_solved";
-            response.attemptsLeft = attemptService.attemptsLeft(request.userId);
+            response.attemptsLeft = attemptService.attemptsLeft(request.userId, today);
             return response;
         }
 
-        //  Now process guess normally
-        var problem = dailyProblemService.getTodayProblem();
-        int realAnswer = problem.answer;
-
-        attemptService.incrementAttempts(request.userId);
+        // Count attempt
+        attemptService.incrementAttempts(request.userId, today);
 
         if (request.guess == realAnswer) {
             response.correct = true;
             response.feedback = "correct";
-            attemptService.markSolved(request.userId);
+            attemptService.markSolved(request.userId, today);
         } else {
             response.correct = false;
 
@@ -86,8 +87,8 @@ public class DailyController {
             }
         }
 
-        response.attemptsLeft = attemptService.attemptsLeft(request.userId);
-        response.locked = attemptService.isLocked(request.userId);
+        response.attemptsLeft = attemptService.attemptsLeft(request.userId, today);
+        response.locked = attemptService.isLocked(request.userId, today);
 
         return response;
     }
