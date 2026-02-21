@@ -13,6 +13,11 @@ public class AttemptService {
 
     private final Map<String, Integer> attemptsMap = new HashMap<>();
     private final Map<String, Boolean> solvedMap = new HashMap<>();
+    private final java.util.Set<String> solvedUsers = new java.util.HashSet<>();
+
+    public boolean isSolved(String userId) {
+        return solvedUsers.contains(userId);
+    }
 
     private String key(String userId) {
         return userId + "_" + LocalDate.now();
@@ -37,6 +42,6 @@ public class AttemptService {
     }
 
     public void markSolved(String userId) {
-        solvedMap.put(key(userId), true);
+        solvedUsers.add(userId);
     }
 }

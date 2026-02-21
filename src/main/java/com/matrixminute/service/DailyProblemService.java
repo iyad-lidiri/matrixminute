@@ -13,18 +13,29 @@ import java.util.Random;
 public class DailyProblemService {
 
     private static final LocalDate START_DATE = LocalDate.of(2026, 1, 1);
+    private DailyProblem cachedProblem;
+    private LocalDate cachedDate;
 
     public DailyProblem getTodayProblem() {
         LocalDate today = LocalDate.now();
+
+        if (cachedProblem != null && today.equals(cachedDate)) {
+            return cachedProblem;
+        }
+
         long dayIndex = ChronoUnit.DAYS.between(START_DATE, today);
+        int typeIndex = (int) (Math.floorMod(dayIndex, 3));
 
-        int typeIndex = (int) (Math.floorMod(dayIndex, 3)); // 0,1,2
-        long seed = today.toEpochDay(); // deterministic for the day
-        Random rng = new Random(seed);
+        Random rng = new Random(today.toEpochDay());
 
-        if (typeIndex == 0) return makeAreaScaleProblem(today, rng);
-        if (typeIndex == 1) return makeSolveXProblem(today, rng);
-        return makeDet3Problem(today, rng);
+        DailyProblem generated;
+        if (typeIndex == 0) generated = makeAreaScaleProblem(today, rng);
+        else if (typeIndex == 1) generated = makeSolveXProblem(today, rng);
+        else generated = makeDet3Problem(today, rng);
+
+        cachedProblem = generated;
+        cachedDate = today;
+        return cachedProblem;
     }
 
     private DailyProblem makeAreaScaleProblem(LocalDate date, Random rng) {
@@ -81,11 +92,7 @@ public class DailyProblemService {
                 }
             }
 
-            int det = Determinants.det3(
-                    m[0][0], m[0][1], m[0][2],
-                    m[1][0], m[1][1], m[1][2],
-                    m[2][0], m[2][1], m[2][2]
-            );
+            int det = Determinants.det3(m);
 
             // keep it reasonable
             if (det == 0) continue;
@@ -99,6 +106,8 @@ public class DailyProblemService {
             p.matrix3 = m;
             p.target = null;
             p.answer = det;
+            System.out.println("MATRIX = " + java.util.Arrays.deepToString(m));
+            System.out.println("DET = " + det);
             return p;
         }
     }
